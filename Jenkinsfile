@@ -2,24 +2,8 @@ pipeline {
  agent {
   label "spc"
  }
- tools {
-  dotnetsdk 'SDK-8'
- }
- stages {
-  stage ("Git"){
-   steps {
-    echo 'Cloning repository...'
-    git branch: 'develop', changelog: false, poll: false, url: 'https://github.com/nopSolutions/nopCommerce.git'
-
-   }
-  }
-   stage ('Build') {
-    steps{
-    dotnetPublish configuration: 'Release',
-     outputDirectory: 'publish',
-     project : 'src/Presentation/Nop.Web/Nop.Web.csproj'
-    }
-   }
+ tools{
+    maven "MAVEN_3.9.8"
  }
  post {
   failure {
@@ -39,5 +23,26 @@ pipeline {
           """
         }
       }
-  
+ parameters{
+    choice( name:'maven_goal',choices: ['package','clean package','clean install'],description: 'pick one')
+ }
+ stages {
+  stage ("Git"){
+   steps {
+    echo 'Cloning repository...'
+    git branch: 'main',
+        url: 'https://github.com/spring-projects/spring-petclinic.git'
+
+   }
   }
+  stage ('Build') {
+    steps{
+    mail bcc: '', body: 'build started', cc: '', from: '', replyTo: '', subject: 'build', to: 'all@gmail.io'
+  sh "mvn ${params.maven_goal}"
+  archiveArtifacts artifacts: 'target/*.jar', followSymlinks: false
+  junit testResults: '**/surefire-reports/*.xml'
+  mail bcc: '', body: 'build completed', cc: '', from: '', replyTo: '', subject: 'build', to: 'all@gmail.io'
+  }
+  }
+ }
+}
