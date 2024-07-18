@@ -1,0 +1,47 @@
+pipeline {
+ agent {
+  label "spc"
+ }
+ tools {
+  dotnetsdk 'SDK-8'
+ }
+ stages {
+  stage ("Git"){
+   steps {
+    echo 'Cloning repository...'
+    git branch: 'develop', changelog: false, poll: false, url: 'https://github.com/nopSolutions/nopCommerce.git'
+
+   }
+  }
+   stage ('Build') {
+    steps{
+       withSonarQubeEnv(credentialsId: 'SONARCLOUD', installationName: 'SONAR_CLOUD'){
+            sh "/var/lib/jenkins/.dotnet/tools/dotnet-sonarscanner begin /k:siadevops_nopcommerce /o:siadevops"
+            sh "dotnet build src/Presentation/Nop.Web/Nop.Web.csproj --no-incremental"
+            sh 'dotnet test src/Presentation/Nop.Web/Nop.Web.csproj'
+            sh 'dotnet publish -c Release src/Presentation/Nop.Web/Nop.Web.csproj -o published/'
+            sh '/var/lib/jenkins/.dotnet/tools/dotnet-sonarscanner end' 
+            }
+    }
+   }
+ }
+ post {
+  failure {
+      mail from: 'jenkins@gmail.com',
+      to: 'all@gmail.com',
+      subject:"Jenkins Pipeline:Build ${BUILD_ID}",
+       body:"""  
+        Build of ${JOB_BASE_NAME} with BuildId= ${BUILD_ID} hsa failed
+          """
+      }
+  success {
+        mail from: 'jenkins@gmail.com',
+        to: 'all@gmail.com',
+        subject:"Jenkins Pipeline:Build ${BUILD_ID}",
+        body:"""
+          Build of ${JOB_BASE_NAME} with BuildId= ${BUILD_ID} hsa been succeeded
+          """
+        }
+      }
+  
+  }

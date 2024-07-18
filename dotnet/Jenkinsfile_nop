@@ -1,0 +1,19 @@
+pipeline{
+     agent {
+      label 'nop'
+     }
+       stages{
+        stage('scm'){
+            steps{
+               git url: 'https://github.com/nopSolutions/nopCommerce.git',
+                   branch: 'develop'
+            }      
+        }
+        stage('build'){
+          steps{
+            sh 'dotnet publish -c Release src/Presentation/Nop.Web/Nop.Web.csproj -o published/'
+          } 
+
+        }
+       }
+}
