@@ -11,9 +11,10 @@ pipeline{
         }
         stage('build'){
           steps{
+            sh 'dotnet build src/Presentation/Nop.Web/Nop.Web.csproj'
+            sh 'dotnet test src/Presentation/Nop.Web/Nop.Web.csproj'
             sh 'dotnet publish -c Release src/Presentation/Nop.Web/Nop.Web.csproj -o published/'
-          } 
-
-        }
-       }
+         } 
+      }
+   }
 }
