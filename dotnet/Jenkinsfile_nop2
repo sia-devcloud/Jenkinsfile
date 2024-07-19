@@ -1,0 +1,25 @@
+pipeline{
+     agent {
+      label 'nop'
+     }
+       stages{
+        stage('scm'){
+            steps{
+               git url: 'https://github.com/nopSolutions/nopCommerce.git',
+                   branch: 'develop'
+            }      
+        }
+        stage('build'){
+          steps{
+            sh 'dotnet publish -c Release src/Presentation/Nop.Web/Nop.Web.csproj -o published/'
+          } 
+        }
+        stage('SonarQube analysis') {
+          steps{
+            withSonarQubeEnv(credentialsId: 'SONARCLOUD', installationName: 'SONAR_CLOUD') { 
+               sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.11.0.3922:sonar'
+      }
+    }
+  }
+       }
+}
