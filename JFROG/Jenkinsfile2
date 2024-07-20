@@ -1,0 +1,47 @@
+pipeline {
+	agent any
+	environment {
+		MAVEN_HOME = '/opt/apache-maven-3.9.8'
+    }
+    stages {
+       stage ("Clone") {
+         steps {
+           git branch: "main",
+           url: "https://github.com/dummyrepos/spring-petclinic-apr24.git"
+          }
+        }
+       stage ("Artifactory configuration") {
+        steps {
+         rtServer (
+          id: "siadevcloud2024",
+          url: "https://siadevcloud2024.jfrog.io/artifactory/",
+          credentialsId: 'JFROG',
+         )
+         rtMavenDeployer (
+          id: "MAVEN_DEPLOYER",
+          serverId: "siadevcloud2024",
+          releaseRepo: "springpetclinic-libs-snapshot-local",
+          snapshotRepo: "springpetclinic-libs-snapshot-local",
+         )
+
+        }
+      }
+       stage ("Exec Maven") {
+        steps {
+         rtMavenRun (
+          pom: 'pom.xml',
+          goals: "clean install",
+          deployerId: "MAVEN_DEPLOYER",
+         )
+         junit testResults: '**/surefire-reports/*.xml'
+        }
+       }
+       stage ("Publish build info") {
+        steps {
+         rtPublishBuildInfo (
+          serverId: "siadevcloud2024",
+         )
+        }
+      }
+   }
+}
